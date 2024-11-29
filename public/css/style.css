@@ -1,0 +1,89 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #fbe3e3;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+header {
+  background-color: #e0a6a6;
+  padding: 20px;
+}
+
+header h1 {
+  color: #fff;
+  margin: 0;
+}
+
+.todoList-container {
+  margin: 20px auto;
+  padding: 20px;
+  max-width: 600px;
+  background: #ffecec;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+form {
+  margin-bottom: 15px;
+}
+
+form input,
+form textarea,
+form button {
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.post {
+  margin: 15px 0;
+  padding: 15px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.post-list {
+  list-style-type: none;
+}
+
+.post-list h3 {
+  color: red;
+}
+
+.post-item p {
+}
+
+li.post-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.post-item.completed h3,
+.post-item.completed p {
+  text-decoration: line-through; /* Υπογράμμιση */
+  color: gray; /* Προαιρετικά */
+}

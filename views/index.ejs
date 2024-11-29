@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <%- include("header.ejs") %>
+
+    <div class="todoList-container">
+      <!-- New Post Form -->
+      <form id="postForm">
+        <input type="text" name="subject" placeholder="Subject" required />
+        <textarea
+          name="txtArea"
+          id="textArea"
+          rows="3"
+          cols="10"
+          placeholder="Write here.."
+          required
+        ></textarea>
+        <input type="submit" value="Submit" />
+      </form>
+
+      <!-- Clear All Button -->
+      <form id="clearForm">
+        <button type="submit">Clear All</button>
+      </form>
+
+      <!-- Posts Panel -->
+      <div class="render-container">
+        <% if (posts.length > 0) { %>
+        <ul class="post-list">
+          <% posts.forEach(post => { %>
+          <li class="post-item" data-id="<%= post.id %>">
+            <input type="checkbox" class="mark-completed" />
+            <h3><%= post.subject %></h3>
+            <p><%= post.text %></p>
+            <div class="task-actions" style="display: none">
+              <button class="edit-btn">Edit</button>
+              <button class="delete-btn">Delete</button>
+            </div>
+          </li>
+          <% }) %>
+        </ul>
+        <% } else { %>
+        <p>No posts yet! Start by creating one.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <%- include("footer.ejs") %>
+
+    <script>
+      // Add post dynamically using fetch
+      const postForm = document.querySelector("#postForm");
+      postForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); // Prevent default form submission
+
+        // Get form data
+        const formData = new FormData(postForm);
+        const subject = formData.get("subject");
+        const text = formData.get("txtArea");
+
+        // Send data to the server using fetch (AJAX)
+        const response = await fetch("/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject, text }),
+        });
+
+        if (response.ok) {
+          // If submission is successful, append the new post
+          const renderContainer = document.querySelector(".render-container");
+          const postList =
+            document.querySelector(".post-list") ||
+            document.createElement("ul");
+          postList.classList.add("post-list");
+
+          const newPost = document.createElement("li");
+          newPost.classList.add("post-item");
+          newPost.innerHTML = `
+                              <input type="checkbox" class="mark-completed" />
+            <h3>${subject} </h3>
+            <p>${text}</p>
+            <div class="task-actions" style="display: none">
+              <button class="edit-btn">Edit</button>
+              <button class="delete-btn">Delete</button>
+            </div>
+              `;
+
+          postList.appendChild(newPost);
+
+          // If there's no existing post list, create one and append to the container
+          if (!renderContainer.contains(postList)) {
+            renderContainer.innerHTML = ""; // Clear "No posts yet" message
+            renderContainer.appendChild(postList);
+          }
+
+          // Reset the form after submission
+          postForm.reset();
+        } else {
+          console.error("Error submitting post");
+        }
+      });
+
+      // Clear all posts
+      const clearForm = document.querySelector("#clearForm");
+      clearForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const response = await fetch("/clear", { method: "POST" });
+        if (response.ok) {
+          // Clear the posts from the DOM
+          const renderContainer = document.querySelector(".render-container");
+          renderContainer.innerHTML = `<p>No posts yet! Start by creating one.</p>`;
+        } else {
+          console.error("Error cleaning posts");
+        }
+      });
+
+      //edit button
+
+      document.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("edit-btn")) {
+          const postItem = e.target.closest(".post-item");
+          const postId = postItem.getAttribute("data-id");
+
+          if (isNaN(postId)) {
+            alert("Invalid Post ID");
+            return;
+          }
+
+          // Retrieve the current title and text
+          const currentTitle = postItem.querySelector("h3").textContent;
+          const currentText = postItem.querySelector("p").textContent;
+
+          //Prompt the user to enter new values
+          const newTitle = prompt("edit the title:", currentTitle);
+          const newText = prompt("edit the text", currentText);
+
+          //check if user canceled or entered empty values
+          if (newTitle === null || newText === null) {
+            alert("Editing canceled");
+            return;
+          }
+          if (newTitle.trim() === "" || newText.trim() === "") {
+            alert("Both fields must be filled out");
+            return;
+          }
+
+          try {
+            //send updated data to server
+
+            const response = await fetch(`/edit/${postId}`, {
+              method: "PUT",
+              headers: { "Content-type": "application/json" },
+              body: JSON.stringify({ subject: newTitle, text: newText }),
+            });
+
+            if (response.ok) {
+              //update DOM with new values
+              postItem.querySelector("h3").textContent = newTitle;
+              postItem.querySelector("p").textContent = newText;
+              alert(`Post with ID ${postId} updated successfully!`);
+            } else {
+              //Notify user of an unsuccessfull update
+              alert("Failed to update the post.Please try again");
+              console.error("Failed to update the post on the server");
+            }
+          } catch (error) {
+            //Handle any error during the update process
+            alert("An error occured while updating the post.Please try again.");
+            console.error("Error updating post", error);
+          }
+        }
+      });
+
+      //delete Button
+
+      document.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("delete-btn")) {
+          const postItem = e.target.closest(".post-item");
+          const postId = postItem.getAttribute("data-id"); //Get task's unique ID
+
+          //ensure postID is valid
+
+          if (isNaN(postId)) {
+            alert("Invalid Post ID");
+            return;
+          }
+
+          //confirm before the delete
+          const confirmDelete = confirm(
+            "Are yoy sure you want delete this post?"
+          );
+          if (!confirmDelete) {
+            return; //If user cancel, no delete action!
+          }
+
+          try {
+            //Attempt to delete post from the server
+            const response = await fetch(`/delete/${postId}`, {
+              method: "DELETE",
+            });
+
+            if (response.ok) {
+              postItem.remove();
+              alert(`Post with ID ${postId} deleted successfully!`);
+              console.log(`Post with ID ${postId} deleted.`);
+            } else {
+              alert(
+                "Failed to delete the post from the server.Please try again!"
+              );
+              console.error("Failed to delete the post from the server");
+            }
+          } catch (error) {
+            alert(
+              "An error occured while deleting the post.Please check your internet connection"
+            );
+            console.error("error deleting post", error);
+          }
+        }
+      });
+
+      //check logic to show/hide edit&delete Buttons
+      document.addEventListener("change", (e) => {
+        if (e.target.classList.contains("mark-completed")) {
+          const postItem = e.target.closest(".post-item");
+          const taskActions = postItem.querySelector(".task-actions");
+
+          //Show or hide buttons based on checkbox state
+
+          if (e.target.checked) {
+            taskActions.style.display = "block";
+          } else {
+            taskActions.style.display = "none";
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
